@@ -13,13 +13,17 @@ namespace AttendanceTrackerMicroservices.AuthAPI.Service
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(AppDbContext db, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IJwtTokenGenerator jwtTokenGenerator)
+        public AuthService(AppDbContext db, UserManager<ApplicationUser> userManager,
+                           RoleManager<IdentityRole> roleManager, IJwtTokenGenerator jwtTokenGenerator,
+                           ILogger<AuthService> logger)
         {
             _db = db;
             _userManager = userManager;
             _roleManager = roleManager;
             _jwtTokenGenerator = jwtTokenGenerator;
+            _logger = logger;
         }
 
         public async Task<string> Register(RegistrationRequestDTO registrationRequestDTO)
@@ -65,11 +69,14 @@ namespace AttendanceTrackerMicroservices.AuthAPI.Service
         public async Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO)
         {
             var user = _db.ApplicationUsers.FirstOrDefault(u => u.UserName.ToLower() == loginRequestDTO.UserName.ToLower());
-
+            
             bool isValid = await _userManager.CheckPasswordAsync(user, loginRequestDTO.Password);
 
             if (user == null || !isValid)
             {
+                _logger.LogInformation("Login Verification failed, " +
+                    "Database looked for {Username}, and found: {user}", loginRequestDTO.UserName, user);
+
                 return new LoginResponseDTO() { User = null, Token = string.Empty };
             }
 
@@ -89,6 +96,8 @@ namespace AttendanceTrackerMicroservices.AuthAPI.Service
                 User = userDTO,
                 Token = token
             };
+
+            _logger.LogInformation("Login verification ended, User: {@UserDTO}, Response: {@LoginResponse}", userDTO, loginResponseDTO);
 
             return loginResponseDTO;
         }

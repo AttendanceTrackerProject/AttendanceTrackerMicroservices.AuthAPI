@@ -11,11 +11,13 @@ namespace AttendanceTrackerMicroservices.AuthAPI.Controllers
     public class AuthAPIController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly ILogger<AuthAPIController> _logger;
         protected ResponseDTO _response;
 
-        public AuthAPIController(IAuthService authService)
+        public AuthAPIController(IAuthService authService, ILogger<AuthAPIController> logger)
         {
             _authService = authService;
+            _logger = logger;
             _response = new();
         }
 
@@ -35,6 +37,7 @@ namespace AttendanceTrackerMicroservices.AuthAPI.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO loginRequestDTO)
         {
+            _logger.LogInformation("AuthAPI - /login endpoint");
             var loginResponse = await _authService.Login(loginRequestDTO);
 
             if (loginResponse.User == null)
